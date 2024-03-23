@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>강냉이</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  function updateQueueStatus() {
+    const status = {
+      'relaxed': 0,
+      'normal': 0,
+      'busy': 0
+    };
+
+    let intervalId = null;
+
+    function incrementStatus(type) {
+      status[type]++;
+      updateDisplay();
+    }
+
+    function decrementStatus() {
+      for (const key in status) {
+        if (status[key] > 0) {
+          status[key]--;
+        }
+      }
+      updateDisplay();
+    }
+
+  function updateDisplay() {
+    const maxStatus = Math.max(status.relaxed, status.normal, status.busy);
+    let queueStatus = '데이터 없음'; // "None data"를 "데이터 없음"으로 변경
+    if (maxStatus > 0) {
+      const statusType = Object.keys(status).find(key => status[key] === maxStatus);
+      switch(statusType) {
+        case 'relaxed':
+          queueStatus = '여유'; // "Relaxed"를 "여유"로 변경
+          break;
+        case 'normal':
+          queueStatus = '보통'; // "Normal"를 "보통"으로 변경
+          break;
+        case 'busy':
+          queueStatus = '혼잡'; // "Busy"를 "혼잡"으로 변경
+          break;
+      }
+    }
+    document.getElementById('queueStatus').textContent = queueStatus;
+  }
+
+    function getCurrentTime() {
+      const now = new Date();
+      return now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function updateTime() {
+      document.getElementById('currentTime').textContent = getCurrentTime();
+    }
+
+    return {
+      init: function() {
+        updateTime();
+        intervalId = setInterval(() => {
+          decrementStatus();
+          updateTime();
+        }, 30000);
+        updateDisplay();
+      },
+      increment: incrementStatus
+    };
+  }
+
+  const queue = updateQueueStatus();
+
+  document.addEventListener('DOMContentLoaded', function() {
+    queue.init();
+  });
+
+  function handleButtonClick(type) {
+    queue.increment(type);
+  }
+</script>
+</head>
+<body class="bg-gray-100">
+<div class="container mx-auto p-4">
+  <div class="bg-white shadow-md rounded p-4">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-xl font-semibold">기흥역 현재 줄 상황</h1>
+      <span id="currentTime" class="text-lg"></span>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-4">
+      <button onclick="handleButtonClick('relaxed')" class="bg-green-200 hover:bg-green-300 text-green-800 py-2 px-4 rounded">여유</button>
+      <button onclick="handleButtonClick('normal')" class="bg-yellow-200 hover:bg-yellow-300 text-yellow-800 py-2 px-4 rounded">보통</button>
+      <button onclick="handleButtonClick('busy')" class="bg-red-200 hover:bg-red-300 text-red-800 py-2 px-4 rounded">혼잡</button>
+    </div>
+    <div class="border border-gray-300 p-4 rounded">
+      <p id="queueStatus" class="text-center text-lg">None data</p>
+    </div>
+    <p class="text-sm text-gray-600 mt-2">1줄 이하 여유, 1줄~2줄 보통, 3줄부터 혼잡입니다.</p>
+  </div>
+</div>
+</body>
+</html>
