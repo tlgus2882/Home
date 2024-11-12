@@ -6,7 +6,7 @@ pygame.init()
 clock = pygame.time.Clock()
 FPS = 60
 screen_image_y = 585
-
+player_money = 100
 # 맵 이미지 로드 및 스케일
 screen_image = pygame.image.load("screenimage.png")
 screen_image = pygame.transform.scale(screen_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -66,6 +66,7 @@ class Animated(pygame.sprite.Sprite):
             self.rect.right = SCREEN_WIDTH
 
 def main():
+    global player_money
     # 플레이어 설정
     player = Animated(position=(100, screen_image_y))
     all_sprites = pygame.sprite.Group(player)
@@ -107,10 +108,8 @@ def main():
                     if event.key == pygame.K_y:
                         if current_map == 1:
                             current_map = 2  # 맵 전환
-                            start_ticks = pygame.time.get_ticks()  # 타이머 리셋
                         elif current_map == 2:
                             current_map = 1  # 원래 맵으로 복귀
-                            start_ticks = pygame.time.get_ticks()  # 타이머 리셋
                         choice_made = True  # 선택이 완료됨을 표시
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
@@ -154,7 +153,9 @@ def main():
         else:
             collision_occurred = False
             choice_made = False  # 선택을 초기화하여 반복적으로 충돌 처리
-
+        #돈 출력
+        money_text = font.render(f"Money: ${player_money}", True, (255, 255, 0))
+        SCREEN.blit(money_text, (10, 10))
         # 타이머와 스프라이트 업데이트
         SCREEN.blit(timer_text, (SCREEN_WIDTH - 200, 20))
         all_sprites.draw(SCREEN)
