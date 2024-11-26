@@ -100,11 +100,6 @@ def main():
     player = Animated(position=(100, screen_image_y))
     all_sprites = pygame.sprite.Group(player)
 
-    # 오브젝트 이미지 및 위치 설정
-    home_image = pygame.image.load("home.png")
-    home_image = pygame.transform.scale(home_image, (100, 100))
-    home_rect = home_image.get_rect(topleft=(500, screen_image_y))
-
     quiz_image = pygame.image.load("quiz.png")
     quiz_image = pygame.transform.scale(quiz_image, (100, 100))
     quiz_rect = quiz_image.get_rect(topleft=(700, screen_image_y))
