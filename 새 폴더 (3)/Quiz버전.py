@@ -2,25 +2,32 @@ import pygame
 import sys
 import random
 import tkinter as tk
+from tkinter import *
+import tkinter.messagebox
+from PIL import ImageTk, Image
 from tkinter import simpledialog
 
+
+
+# 화면 설정
 SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
 pygame.init()
 pygame.mixer.init()
 clock = pygame.time.Clock()
 FPS = 60
-screen_image_y = 585
+sleep = False
+# 전역 변수
 player_money = 100
 knowledge = 0
-# 맵 이미지 로드 및 스케일
+screen_image_y = 585
+grade = 0
+
+# 이미지 및 음악 로드
 screen_image = pygame.image.load("screenimage.png")
 screen_image = pygame.transform.scale(screen_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
-
-#음악
 pygame.mixer.music.load("background_music.mp3")
 pygame.mixer.music.set_volume(0.1)
 pygame.mixer.music.play(-1)
-
 button_click_sound = pygame.mixer.Sound("button04a.mp3")
 button_click_sound.set_volume(0.7)
 
@@ -29,7 +36,7 @@ font = pygame.font.Font(None, 36)
 
 class Animated(pygame.sprite.Sprite):
     def __init__(self, position):
-        super(Animated, self).__init__()
+        super().__init__()
         size = (100, 80)
         self.front_images = [
             pygame.image.load("front1.png"),
@@ -42,14 +49,12 @@ class Animated(pygame.sprite.Sprite):
             pygame.image.load("right3.png")
         ]
         self.left_images = [pygame.transform.flip(img, True, False) for img in self.right_images]
-        
         self.rect = pygame.Rect(position, size)
         self.images = [pygame.transform.scale(img, size) for img in self.front_images]
         self.direction = 'front'
         self.state = 0
         self.index = 0
         self.image = self.images[self.index]
-        
         self.animation_time = 0.1
         self.current_time = 0
         self.speed_x = 0
@@ -63,18 +68,49 @@ class Animated(pygame.sprite.Sprite):
         elif self.direction == 'left':
             self.images = self.left_images
             self.speed_x = -2
-        
+
         self.current_time += mt
         if self.current_time >= self.animation_time:
             self.current_time = 0
             self.index = (self.index + 1) % len(self.images)
             self.image = pygame.transform.scale(self.images[self.index], (100, 80))
         self.rect.x += self.speed_x
-        if self.rect.left < 0:  
+
+        # 화면 경계 확인
+        if self.rect.left < 0:
             self.rect.left = 0
-        elif self.rect.right > SCREEN_WIDTH:  
+        elif self.rect.right > SCREEN_WIDTH:
             self.rect.right = SCREEN_WIDTH
 
+def game_shop():
+    root = tk.Tk()
+    root.geometry("480x480")
+    tkbgimage = Image.open('shop.png')
+    bg = ImageTk.PhotoImage(tkbgimage)
+    label = Label(root, image=bg)
+    label.place(x = -2,y = -2)
+    def msg_Box1():
+        tk.messagebox.showinfo("구매실패","돈이 없습니다.")
+    def msg_Box2():
+        tk.messagebox.showinfo("구매실패","지능이 모자랍니다.")
+        
+    def buy_Grade():
+        global grade
+        global player_money
+        global knowledge
+        if player_money >= 100 and knowledge >= 10:
+            player_money -= 100
+            grade += 1
+        elif player_money < 100:
+            msg_Box1()
+        elif knowledge < 10:
+            msg_Box2()
+        root.destroy()
+    btn = Button(root,width=20,height=5,bg="green", text="학점 구매\n(100원/지능10이상)", command=buy_Grade)
+    btn.pack()
+    root.mainloop()  
+    return grade
+# 퀴즈 게임 함수
 def quiz_game():
     questions = {
         "많은 사람들이 일어나지 않은 거짓된 사실에 대한 기억을 공유하는 현상은 무엇인가요?": "만델라 효과",
@@ -91,7 +127,6 @@ def quiz_game():
 
     quiz_list = list(questions.items())
     random.shuffle(quiz_list)
-
     score = 0
     root = tk.Tk()
     root.withdraw()
@@ -103,25 +138,25 @@ def quiz_game():
 
     root.destroy()
     return score
+
+# 조준 게임 함수
 def aim_game():
-    # 미니게임 초기화
     school_image = pygame.image.load("school.png")
     school_image = pygame.transform.scale(school_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
     mini_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Catch the book")
 
     target_image = pygame.image.load("target.png")
-    target_image = pygame.transform.scale(target_image, (60, 60))  # 크기를 조정
+    target_image = pygame.transform.scale(target_image, (60, 60))
     target_rect = target_image.get_rect()
-
     target_rect.topleft = (
         random.randint(0, SCREEN_WIDTH - target_rect.width),
         random.randint(0, SCREEN_HEIGHT - target_rect.height),
     )
-    target_spawn_time = 2000  # 밀리초
+
+    target_spawn_time = 2000
     last_spawn_time = pygame.time.get_ticks()
     score = 0
-    game_time = 15  # 미니게임 제한 시간 (초)
+    game_time = 15
     start_time = pygame.time.get_ticks()
 
     running = True
@@ -133,8 +168,8 @@ def aim_game():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # 좌클릭
-                if target_rect.collidepoint(pygame.mouse.get_pos()):  # 클릭 확인
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if target_rect.collidepoint(pygame.mouse.get_pos()):
                     button_click_sound.play()
                     score += 1
                     target_rect.topleft = (
@@ -142,19 +177,16 @@ def aim_game():
                         random.randint(0, SCREEN_HEIGHT - target_rect.height),
                     )
 
-        # 타겟 스폰 (시간 기반)
         if pygame.time.get_ticks() - last_spawn_time > target_spawn_time:
             target_rect.topleft = (
                 random.randint(0, SCREEN_WIDTH - target_rect.width),
                 random.randint(0, SCREEN_HEIGHT - target_rect.height),
             )
             last_spawn_time = pygame.time.get_ticks()
-        #화면 그리기
-        SCREEN.blit(school_image, (0, 0))
-        # 타겟 그리기
+
+        mini_screen.blit(school_image, (0, 0))
         mini_screen.blit(target_image, target_rect.topleft)
 
-        # 점수와 타이머 표시
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {score}", True, (0, 255, 0))
         timer_text = font.render(f"Time Left: {remaining_time}", True, (125, 125, 50))
@@ -163,41 +195,43 @@ def aim_game():
 
         pygame.display.update()
 
-        if remaining_time <= 0:  # 시간 종료
+        if remaining_time <= 0:
             running = False
 
     return score
 
+# 메인 함수
 def main():
     global player_money
     global knowledge
-    # 플레이어 설정
+    global sleep
+    global grade
     player = Animated(position=(100, screen_image_y))
     all_sprites = pygame.sprite.Group(player)
-    #리셋이미지
+
     reset_image = pygame.image.load("reset.png")
     reset_image = pygame.transform.scale(reset_image, (100, 100))
     reset_rect = reset_image.get_rect(topleft=(50, screen_image_y))
-    #퀴즈이미지
+
     quiz_image = pygame.image.load("quiz.png")
     quiz_image = pygame.transform.scale(quiz_image, (100, 100))
     quiz_rect = quiz_image.get_rect(topleft=(700, screen_image_y))
-    #미니게임 이미지
+
     shot_image = pygame.image.load("shot.png")
     shot_image = pygame.transform.scale(shot_image, (100, 100))
     shot_rect = shot_image.get_rect(topleft=(400, screen_image_y))
 
-    timer_duration = 600  # 타이머 (초)
+    shop_image = pygame.image.load("shop.png")
+    shop_image = pygame.transform.scale(shop_image, (100, 100))
+    shop_rect = shop_image.get_rect(topleft=(200, screen_image_y))
+
+    timer_duration = 600
     start_ticks = pygame.time.get_ticks()
-    end_text = font.render("Time Over", True, (70, 80, 90))
-    collision_occurred = False  #충돌감지
-    choice_made = False     #골랐는지 안골랐는지
 
     running = True
     while running:
         mt = clock.tick(FPS) / 1000
 
-        # 이벤트 처리
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -205,89 +239,84 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT:
                     player.direction = "right"
-                    player.state = 1
                 elif event.key == pygame.K_LEFT:
                     player.direction = "left"
-                    player.state = 1
-                elif collision_occurred and not choice_made:    #상호작용하였을때
-                    if player.rect.colliderect(quiz_rect):
-                        score = quiz_game()
-                        player_money += score * 10
-                        knowledge += score
-                        choice_made = True
-                if player.rect.colliderect(reset_rect) and event.key == pygame.K_y and choice_made == True:
-                    choice_made = False
+                elif player.rect.colliderect(quiz_rect) and event.key == pygame.K_y and sleep == False:
+                    score = quiz_game()
+                    player_money += score
+                    knowledge += score
+                    sleep = True
+                elif player.rect.colliderect(reset_rect) and event.key == pygame.K_y and sleep == True:
                     start_ticks -= 60000
-                if player.rect.colliderect(shot_rect) and event.key == pygame.K_y and choice_made == False and knowledge > 5:
-                    mini_game_score = aim_game()
-                    player_money += mini_game_score * 5  # 미니게임 점수 기반 보상
-                    knowledge += mini_game_score
-                    choice_made = True
+                    sleep = False
+                elif player.rect.colliderect(shot_rect) and event.key == pygame.K_y and knowledge >= 5 and sleep == False:
+                    score = aim_game()
+                    player_money += score * 5
+                    knowledge += score
+                    sleep = True
+                elif player.rect.colliderect(shop_rect) and event.key == pygame.K_y:
+                    grade = game_shop()
             elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
+                if event.key in [pygame.K_RIGHT, pygame.K_LEFT]:
                     player.direction = "front"
-                    player.state = 0
                     player.speed_x = 0
 
         all_sprites.update(mt)
-
-        # 시간 계산
         elapsed_seconds = (pygame.time.get_ticks() - start_ticks) / 1000
         remaining_time = max(0, timer_duration - int(elapsed_seconds))
         if remaining_time > 0:
             timer_text = font.render(f"Time Left: {remaining_time // 60}:{remaining_time % 60:02}", True, (70, 80, 90))
         else:
+            end_text = font.render("Time Over", True, (255, 0, 0))
             SCREEN.blit(end_text, (SCREEN_WIDTH / 2 - end_text.get_width() // 2, SCREEN_HEIGHT / 2 - end_text.get_height() // 2))
             pygame.display.update()
             pygame.time.delay(2000)
             pygame.quit()
             sys.exit()
 
-        # 맵 표시
         SCREEN.blit(screen_image, (0, 0))
         SCREEN.blit(quiz_image, quiz_rect.topleft)
         SCREEN.blit(reset_image, reset_rect.topleft)
         SCREEN.blit(shot_image, shot_rect.topleft)
+        SCREEN.blit(shop_image, shop_rect.topleft)
 
-        # 충돌 감지 (home, quiz와 플레이어)
         if player.rect.colliderect(quiz_rect):
-            collision_occurred = True
-            if not choice_made:  # 선택이 이루어지지 않은 상태에서만 표시
-                choice_text = font.render("Press Y to start the quiz.", True, (60, 70, 80))
-                SCREEN.blit(choice_text, (SCREEN_WIDTH / 2 - choice_text.get_width() // 2, SCREEN_HEIGHT / 2))
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_y and not choice_made:
-                score = quiz_game()
-                player_money += score * 10
-                choice_made = True
-        else:
-            collision_occurred = False
-#잠자기
+            quiz_text = font.render("Press Y to start the quiz game.", True, (0, 255, 0))
+            SCREEN.blit(quiz_text, (SCREEN_WIDTH // 2 - quiz_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+
         if player.rect.colliderect(reset_rect):
-            reset_text = font.render("Press Y to sleep and minus 60seconds.", True, (60, 70, 80))
-            SCREEN.blit(reset_text, (SCREEN_WIDTH / 2 - reset_text.get_width() // 2, SCREEN_HEIGHT / 2 + 50))
-#샷게임 상호작용 메세지
+            reset_text = font.render("Press Y to rest and reduce 60 seconds.", True, (0, 255, 255))
+            SCREEN.blit(reset_text, (SCREEN_WIDTH // 2 - reset_text.get_width() // 2, SCREEN_HEIGHT // 2 + 100))
+
         if player.rect.colliderect(shot_rect):
-            shot_text = font.render("Press Y to start the mini-game. (need knowledge 5 over)", True, (60, 70, 80))
-            SCREEN.blit(shot_text, (SCREEN_WIDTH // 2 - shot_text.get_width() // 2, SCREEN_HEIGHT // 2 + 100))
-        # 돈 출력
+            shot_text = font.render("Press Y to start the mini-game (Knowledge need over 5).", True, (255, 255, 0))
+            SCREEN.blit(shot_text, (SCREEN_WIDTH // 2 - shot_text.get_width() // 2, SCREEN_HEIGHT // 2 + 150))
+
+        if player.rect.colliderect(shop_rect):
+            shop_text = font.render("Press Y to go shop).", True, (255, 255, 0))
+            SCREEN.blit(shop_text, (SCREEN_WIDTH // 2 - shop_text.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+
         money_text = font.render(f"Money: ${player_money}", True, (255, 161, 92))
         SCREEN.blit(money_text, (10, 10))
 
-        # 지식 출력
         knowledge_text = font.render(f"Knowledge: {knowledge}", True, (137, 178, 233))
         SCREEN.blit(knowledge_text, (170, 10))
-
         #잠 상태 출력
-        if choice_made:
+
+        if sleep == True:
             sleep_text = font.render("Sleep: O", True, (0, 255, 255))  
         else:
-            sleep_text = font.render("Sleep: X", True, (205, 92, 92))  
-        
-        SCREEN.blit(sleep_text, (10, 50))
-        # 타이머와 스프라이트 업데이트
-        SCREEN.blit(timer_text, (SCREEN_WIDTH - 200, 20))
-        all_sprites.draw(SCREEN)
-        pygame.display.update()
+            sleep_text = font.render("Sleep: X", True, (205, 92, 92))
 
+        SCREEN.blit(sleep_text, (10, 50))
+
+        # 학점 출력
+
+        grade_text = font.render(f"grade: {grade}", True, (46,139,87))
+        SCREEN.blit(grade_text, (640, 10))
+        all_sprites.draw(SCREEN)
+        SCREEN.blit(timer_text, (SCREEN_WIDTH - 200, 20))
+    
+        pygame.display.update()
 if __name__ == '__main__':
-    main()
+    main()        
